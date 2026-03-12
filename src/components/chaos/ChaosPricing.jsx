@@ -1,97 +1,249 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
+import { useFakeLag } from '../../hooks/useFakeLag';
 
 export default function ChaosPricing() {
   const { baseFare, selectedRideType } = useAppStore();
+  const applyLag = useFakeLag();
   
-  // Local state purely for visual deception, disconnected from true baseFare
   const [displayFare, setDisplayFare] = useState(baseFare);
-  const [urgencyCounter, setUrgencyCounter] = useState(12);
+  
+  // The Exhaustion Funnel States
+  const [clickStage, setClickStage] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [injectLayoutShift, setInjectLayoutShift] = useState(false);
 
+  // The Endgame State Machine: 'pricing' -> 'searching' -> 'found' -> 'cancelled'
+  const [bookingPhase, setBookingPhase] = useState('pricing');
+  const [cancelReason, setCancelReason] = useState('');
+  const [absurdEta, setAbsurdEta] = useState('');
+
+  // Arrays for randomized chaos
+  const cancellationReasons = [
+    "Driver did not like your destination.",
+    "Driver is currently having an existential crisis.",
+    "Vehicle's astrological sign is incompatible with yours.",
+    "Driver stopped for chai and forgot about you.",
+    "Route involves a slight left turn. Driver refuses.",
+    "Insufficient atmospheric pressure in the cabin.",
+    "Driver realized they actually hate driving."
+  ];
+
+  const absurdEtas = [
+    "8 hours and 14 minutes",
+    "3 days (Traffic dependent)",
+    "494 minutes",
+    "Eventually",
+    "Sometime next Thursday"
+  ];
+
+  // Utility for Indian Rupee formatting (e.g., 46,350.00)
+  const formatINR = (amount) => {
+    return amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // Pricing & Surge Logic
   useEffect(() => {
-    // Reset display fare when they change ride types to maintain the illusion
-    setDisplayFare(baseFare * (selectedRideType === 'suv' ? 2 : selectedRideType === 'sedan' ? 1.5 : 1));
+    if (bookingPhase !== 'pricing') return;
+
+    // Apply multiplier based on ride type
+    const multiplier = selectedRideType === 'suv' ? 2 : selectedRideType === 'sedan' ? 1.5 : 1;
+    setDisplayFare(baseFare * multiplier);
     
-    // The Surge Engine: Increases the price randomly every 800ms
+    // The aggressive surge interval
     const surgeInterval = setInterval(() => {
-      setDisplayFare(prev => {
-        const randomSurge = Math.random() * 8.5; 
-        return prev + randomSurge;
-      });
+      setDisplayFare(prev => prev + (Math.random() * 12.5)); // Slightly higher random surge
     }, 800);
 
-    // The Gaslighting Timer: Counts down to panic the user, resets just before 0
-    const timerInterval = setInterval(() => {
-      setUrgencyCounter(prev => {
-        if (prev <= 2) return Math.floor(Math.random() * 8) + 8;
-        return prev - 1;
-      });
-    }, 1000);
+    const shiftTimer = setTimeout(() => {
+      setInjectLayoutShift(true);
+    }, 2500);
 
     return () => {
       clearInterval(surgeInterval);
-      clearInterval(timerInterval);
+      clearTimeout(shiftTimer);
     };
-  }, [baseFare, selectedRideType]);
+  }, [baseFare, selectedRideType, bookingPhase]);
 
-  // Hide the pricing trap until they interact with the selection trap
+  // The Funnel Logic
+  const handleDeceptiveClick = () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+
+    applyLag(() => {
+      setIsProcessing(false);
+      
+      if (clickStage === 0) {
+        setClickStage(1);
+      } else if (clickStage === 1) {
+        setClickStage(2);
+      } else {
+        startEndgameSequence();
+      }
+    }, 1500, 3000);
+  };
+
+  const startEndgameSequence = () => {
+    setBookingPhase('searching');
+    
+    // Phase 1: Search for 3.5 seconds
+    setTimeout(() => {
+      setAbsurdEta(absurdEtas[Math.floor(Math.random() * absurdEtas.length)]);
+      setBookingPhase('found');
+      
+      // Phase 2: Show the terrible ETA for 4 seconds, then crash
+      setTimeout(() => {
+        setCancelReason(cancellationReasons[Math.floor(Math.random() * cancellationReasons.length)]);
+        setBookingPhase('cancelled');
+      }, 4000);
+
+    }, 3500);
+  };
+
+  const resetChaos = () => {
+    setBookingPhase('pricing');
+    setClickStage(0);
+    setInjectLayoutShift(false);
+  };
+
   if (!selectedRideType) return null;
 
+  // --- UI RENDER BLOCKS ---
+
+  if (bookingPhase === 'searching') {
+    return (
+      <div className="w-full max-w-md mx-auto mt-4 bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-12 text-center relative overflow-hidden">
+        <div className="relative w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+          <div className="absolute inset-0 border-4 border-blue-100 rounded-full animate-ping"></div>
+          <div className="absolute inset-2 border-4 border-blue-300 rounded-full animate-pulse"></div>
+          <div className="relative z-10 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg">
+            <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Connecting to Driver</h3>
+        <p className="text-sm text-gray-500">Contacting vehicles in your expanded radius...</p>
+      </div>
+    );
+  }
+
+  if (bookingPhase === 'found') {
+    return (
+      <div className="w-full max-w-md mx-auto mt-4 bg-white rounded-3xl border border-green-200 shadow-[0_8px_30px_rgb(0,128,0,0.1)] p-8 text-center relative overflow-hidden animate-fade-in">
+        <div className="w-20 h-20 mx-auto bg-green-50 rounded-full flex items-center justify-center mb-4">
+          <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-black text-gray-900 mb-1">Driver Assigned!</h3>
+        <p className="text-gray-500 text-sm mb-6">Your premium ride is on the way.</p>
+        
+        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Estimated Time of Arrival</p>
+          <p className="text-2xl font-mono font-bold text-red-600">{absurdEta}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (bookingPhase === 'cancelled') {
+    return (
+      <div className="w-full max-w-md mx-auto mt-4 bg-red-50 rounded-3xl border border-red-200 shadow-[0_8px_30px_rgb(255,0,0,0.06)] p-8 relative overflow-hidden animate-fade-in">
+        <div className="flex items-center gap-4 mb-6 border-b border-red-100 pb-4">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-red-900">Ride Terminated</h3>
+            <p className="text-xs text-red-700 font-medium">System auto-cancelled by partner.</p>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <p className="text-[10px] text-red-500 uppercase tracking-widest font-bold mb-2">Cancellation Reason provided by Driver:</p>
+          <p className="text-xl font-serif text-gray-900 leading-tight">"{cancelReason}"</p>
+        </div>
+
+        <button 
+          onClick={resetChaos}
+          className="w-full bg-white border-2 border-red-200 hover:bg-red-50 text-red-700 font-bold py-4 rounded-xl transition-colors flex justify-center items-center gap-2"
+        >
+          <span>Acknowledge & Restart</span>
+        </button>
+      </div>
+    );
+  }
+
+  // DEFAULT: The Pricing Phase
+  // Calculate the difference for the "Surcharge" line item
+  const surcharge = displayFare - baseFare;
+
   return (
-    <div className="w-full max-w-md mx-auto mt-4 bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden">
+    <div className="w-full max-w-md mx-auto mt-4 bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden transition-all duration-300">
       
-      {/* Sleek, deceptive header */}
       <div className="flex justify-between items-start mb-6 border-b border-gray-50 pb-4">
         <div>
           <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
             Live Fare Estimate
           </h3>
-          <p className="text-[10px] text-gray-400 mt-1">Calculating optimal routing...</p>
-        </div>
-        
-        {/* The fake timer */}
-        <div className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 text-right">
-          <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-0.5">Fare Locked</p>
-          <p className="text-sm font-mono font-bold text-gray-800">00:{urgencyCounter.toString().padStart(2, '0')}</p>
         </div>
       </div>
 
-      {/* The Price Display */}
-      <div className="flex flex-col items-center justify-center my-8">
-        <span className="text-xs text-gray-400 line-through mb-1">
-          ₹{Math.floor(baseFare)} Standard
-        </span>
-        <div className="text-6xl font-black text-gray-900 tracking-tighter flex items-start">
-          <span className="text-2xl mt-2 text-gray-400 mr-1">₹</span>
-          {displayFare.toFixed(2)}
+      <div className="flex flex-col items-center justify-center my-4">
+        <div className="text-5xl font-black text-gray-900 tracking-tighter flex items-start transition-all">
+          <span className="text-2xl mt-1 text-gray-400 mr-1">₹</span>
+          {formatINR(displayFare)}
         </div>
       </div>
 
-      {/* Corporate Gaslighting Microcopy */}
-      <div className="bg-gray-50 rounded-xl p-3 mb-6">
-        <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
-          <span>Base rate</span>
-          <span>₹{Math.floor(baseFare)}.00</span>
+      {/* The Sleek Receipt Breakdown */}
+      <div className="bg-gray-50 rounded-xl p-3 mb-6 border border-gray-100">
+        <div className="flex justify-between items-center text-xs text-gray-600 mb-1.5">
+          <span>Base rate (Distance mapped)</span>
+          <span className="font-mono">₹{formatINR(baseFare)}</span>
         </div>
-        <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
-          <span>Dynamic weather surge</span>
-          <span className="text-blue-600 font-medium">+ ₹{(displayFare - baseFare - 5).toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between items-center text-[9px] text-gray-400 mt-3 pt-2 border-t border-gray-200">
-          <span>*Excludes regulatory algorithms and atmospheric fees.</span>
+        <div className="flex justify-between items-center text-xs text-gray-600">
+          <span>Dynamic area surcharge</span>
+          <span className="text-blue-600 font-medium font-mono">+ ₹{formatINR(surcharge > 0 ? surcharge : 0)}</span>
         </div>
       </div>
 
-      {/* The "Trap" Button */}
+      {injectLayoutShift && (
+        <div className="bg-orange-50 rounded-xl p-3 mb-4 border border-orange-100 animate-fade-in">
+          <p className="text-xs font-bold text-orange-800 mb-1">High Demand Surcharge Added</p>
+          <p className="text-[10px] text-orange-600 leading-relaxed">
+            A temporary spatial multiplier has been applied to ensure intercontinental pickup reliability.
+          </p>
+        </div>
+      )}
+
       <button 
-        className="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 rounded-xl transition-transform active:scale-95 flex justify-center items-center gap-2 shadow-lg"
-        onClick={() => alert("Fare expired due to high demand. Recalculating...")}
+        disabled={isProcessing}
+        onClick={handleDeceptiveClick}
+        className={`w-full font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg 
+          ${isProcessing ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' : 
+            clickStage === 0 ? 'bg-black text-white hover:bg-gray-800' : 
+            clickStage === 1 ? 'bg-blue-600 text-white hover:bg-blue-700' : 
+            'bg-red-600 text-white hover:bg-red-700'}
+        `}
       >
-        <span>Confirm Ride</span>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
+        {isProcessing ? (
+          <svg className="w-5 h-5 animate-spin text-gray-500" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        ) : clickStage === 0 ? (
+          <span>Confirm Ride</span>
+        ) : clickStage === 1 ? (
+          <span>Acknowledge Surge & Proceed</span>
+        ) : (
+          <span>Verify Location Risk</span>
+        )}
       </button>
     </div>
   );

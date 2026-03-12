@@ -13,6 +13,9 @@ export const useAppStore = create((set) => ({
   baseFare: 150,
   selectedRideType: null,
   rideStatus: 'idle',
+  // Add these two lines to your useAppStore implementation:
+globalSurge: 0,
+increaseGlobalSurge: (amount) => set((state) => ({ globalSurge: state.globalSurge + amount })),
 
   setPickup: (location) => set({ pickupLocation: location }),
   setDropoff: (location) => set({ dropoffLocation: location }),

@@ -2,17 +2,19 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
 
 export default function ConfusingSelection() {
-  const { selectedRideType, setRideType, baseFare } = useAppStore();
+  // Pull the new globalSurge and increaseGlobalSurge from the store
+  const { selectedRideType, setRideType, baseFare, globalSurge, increaseGlobalSurge } = useAppStore();
   const [isGlitching, setIsGlitching] = useState(false);
-  const [globalSurge, setGlobalSurge] = useState(0);
 
-  // The Panic Engine: All prices tick up simultaneously
+  // The Panic Engine: Now updates the central store so all components see the same surge
   useEffect(() => {
     const surgeInterval = setInterval(() => {
-      setGlobalSurge(prev => prev + (Math.random() * 8.5));
+      if (increaseGlobalSurge) {
+        increaseGlobalSurge(Math.random() * 8.5);
+      }
     }, 800);
     return () => clearInterval(surgeInterval);
-  }, []);
+  }, [increaseGlobalSurge]);
 
   const formatINR = (amount) => {
     return amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -38,10 +40,10 @@ export default function ConfusingSelection() {
     else setRideType('sedan');
   };
 
-  // Dynamic Fare Calculations
-  const suvFare = (baseFare * 2) + globalSurge;
-  const sedanFare = (baseFare * 1.5) + globalSurge;
-  const miniFare = (baseFare * 1) + globalSurge;
+  // Dynamic Fare Calculations using the synced globalSurge
+  const suvFare = (baseFare * 2) + (globalSurge || 0);
+  const sedanFare = (baseFare * 1.5) + (globalSurge || 0);
+  const miniFare = (baseFare * 1) + (globalSurge || 0);
 
   return (
     <div className={`w-full max-w-md mx-auto bg-white p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] mb-6 relative overflow-hidden transition-all duration-75 ${isGlitching ? 'translate-x-1 -translate-y-1 rotate-1 blur-[2px] scale-[0.98]' : ''}`}>
@@ -78,7 +80,6 @@ export default function ConfusingSelection() {
             </div>
           </div>
           <div className="text-right">
-            {/* Dynamically updating price */}
             <div className="text-xl font-black text-gray-900">₹{formatINR(suvFare)}</div>
             <div className="text-[10px] text-gray-400 line-through">₹{formatINR(suvFare * 0.7)}</div>
           </div>
@@ -100,7 +101,6 @@ export default function ConfusingSelection() {
               <p className="text-xs text-gray-500">15 min away</p>
             </div>
           </div>
-          {/* Dynamically updating price */}
           <div className="text-xl font-bold text-gray-700">₹{formatINR(sedanFare)}</div>
         </button>
 
@@ -123,7 +123,6 @@ export default function ConfusingSelection() {
               </div>
             </div>
           </div>
-          {/* Dynamically updating price */}
           <div className="text-xl font-bold text-gray-400">₹{formatINR(miniFare)}</div>
         </button>
       </div>

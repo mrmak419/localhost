@@ -21,7 +21,7 @@ export default function Dashboard() {
           
           <header className="mb-6 flex justify-between items-center px-2">
             <h1 className="text-3xl font-black tracking-tighter text-gray-900">
-              go<span className="text-blue-600">cab</span>
+              Local<span className="text-blue-600">host</span>
             </h1>
             
             <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">

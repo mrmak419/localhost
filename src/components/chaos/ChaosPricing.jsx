@@ -3,22 +3,20 @@ import { useAppStore } from '../../store/appStore';
 import { useFakeLag } from '../../hooks/useFakeLag';
 
 export default function ChaosPricing() {
-  const { baseFare, selectedRideType } = useAppStore();
+  // Read globalSurge from the store
+  const { baseFare, selectedRideType, globalSurge } = useAppStore();
   const applyLag = useFakeLag();
-  
-  const [displayFare, setDisplayFare] = useState(baseFare);
   
   // The Exhaustion Funnel States
   const [clickStage, setClickStage] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [injectLayoutShift, setInjectLayoutShift] = useState(false);
 
-  // The Endgame State Machine: 'pricing' -> 'searching' -> 'found' -> 'cancelled'
+  // The Endgame State Machine
   const [bookingPhase, setBookingPhase] = useState('pricing');
   const [cancelReason, setCancelReason] = useState('');
   const [absurdEta, setAbsurdEta] = useState('');
 
-  // Arrays for randomized chaos
   const cancellationReasons = [
     "Driver did not like your destination.",
     "Driver is currently having an existential crisis.",
@@ -37,33 +35,18 @@ export default function ChaosPricing() {
     "Sometime next Thursday"
   ];
 
-  // Utility for Indian Rupee formatting (e.g., 46,350.00)
   const formatINR = (amount) => {
     return amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // Pricing & Surge Logic
+  // Layout Shift Logic (Surge interval removed to use global store instead)
   useEffect(() => {
     if (bookingPhase !== 'pricing') return;
-
-    // Apply multiplier based on ride type
-    const multiplier = selectedRideType === 'suv' ? 2 : selectedRideType === 'sedan' ? 1.5 : 1;
-    setDisplayFare(baseFare * multiplier);
-    
-    // The aggressive surge interval
-    const surgeInterval = setInterval(() => {
-      setDisplayFare(prev => prev + (Math.random() * 12.5)); // Slightly higher random surge
-    }, 800);
-
     const shiftTimer = setTimeout(() => {
       setInjectLayoutShift(true);
     }, 2500);
-
-    return () => {
-      clearInterval(surgeInterval);
-      clearTimeout(shiftTimer);
-    };
-  }, [baseFare, selectedRideType, bookingPhase]);
+    return () => clearTimeout(shiftTimer);
+  }, [bookingPhase]);
 
   // The Funnel Logic
   const handleDeceptiveClick = () => {
@@ -85,18 +68,13 @@ export default function ChaosPricing() {
 
   const startEndgameSequence = () => {
     setBookingPhase('searching');
-    
-    // Phase 1: Search for 3.5 seconds
     setTimeout(() => {
       setAbsurdEta(absurdEtas[Math.floor(Math.random() * absurdEtas.length)]);
       setBookingPhase('found');
-      
-      // Phase 2: Show the terrible ETA for 4 seconds, then crash
       setTimeout(() => {
         setCancelReason(cancellationReasons[Math.floor(Math.random() * cancellationReasons.length)]);
         setBookingPhase('cancelled');
       }, 4000);
-
     }, 3500);
   };
 
@@ -179,7 +157,10 @@ export default function ChaosPricing() {
   }
 
   // DEFAULT: The Pricing Phase
-  // Calculate the difference for the "Surcharge" line item
+  
+  // Calculate perfectly synced dynamic pricing
+  const multiplier = selectedRideType === 'suv' ? 2 : selectedRideType === 'sedan' ? 1.5 : 1;
+  const displayFare = (baseFare * multiplier) + (globalSurge || 0);
   const surcharge = displayFare - baseFare;
 
   return (
@@ -201,7 +182,6 @@ export default function ChaosPricing() {
         </div>
       </div>
 
-      {/* The Sleek Receipt Breakdown */}
       <div className="bg-gray-50 rounded-xl p-3 mb-6 border border-gray-100">
         <div className="flex justify-between items-center text-xs text-gray-600 mb-1.5">
           <span>Base rate (Distance mapped)</span>

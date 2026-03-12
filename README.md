@@ -1,4 +1,4 @@
-#  Go Cab - Impetus Design Challenge
+#  Localhost - Impetus Design Challenge
 
 Welcome to the **LocalHost** project repository! This project is being developed as part of the **Impetus** event.
 

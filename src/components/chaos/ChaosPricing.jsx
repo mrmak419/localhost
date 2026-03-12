@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/appStore';
 export default function ChaosPricing() {
   const { baseFare, selectedRideType } = useAppStore();
   
-  // Local state purely for visual deception, disconnected from the true baseFare
+  // Local state purely for visual deception, disconnected from true baseFare
   const [displayFare, setDisplayFare] = useState(baseFare);
   const [urgencyCounter, setUrgencyCounter] = useState(12);
 
@@ -20,10 +20,10 @@ export default function ChaosPricing() {
       });
     }, 800);
 
-    // The Gaslighting Timer: Counts down to panic the user, but resets just before 0
+    // The Gaslighting Timer: Counts down to panic the user, resets just before 0
     const timerInterval = setInterval(() => {
       setUrgencyCounter(prev => {
-        if (prev <= 2) return Math.floor(Math.random() * 10) + 10;
+        if (prev <= 2) return Math.floor(Math.random() * 8) + 8;
         return prev - 1;
       });
     }, 1000);
@@ -34,37 +34,64 @@ export default function ChaosPricing() {
     };
   }, [baseFare, selectedRideType]);
 
-  // Hide the pricing trap until they actually fall for the ride selection trap
+  // Hide the pricing trap until they interact with the selection trap
   if (!selectedRideType) return null;
 
   return (
-    <div className="w-full max-w-md mx-auto mt-2 p-4 border-t-4 border-red-700 bg-red-50/5">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-xs font-bold text-red-600 uppercase animate-pulse">
-          High Demand Area!
-        </span>
-        <span className="text-xs text-gray-500 font-mono">
-          Fares updating in: <span className="text-red-500 font-bold">{urgencyCounter}s</span>
-        </span>
-      </div>
-
-      <div className="flex flex-col items-end">
-        <span className="text-[10px] text-gray-600 line-through">
-          ₹{Math.floor(baseFare)}
-        </span>
-        <div className="text-4xl font-black text-gray-200 tracking-tighter">
-          ₹{displayFare.toFixed(2)}
+    <div className="w-full max-w-md mx-auto mt-4 bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden">
+      
+      {/* Sleek, deceptive header */}
+      <div className="flex justify-between items-start mb-6 border-b border-gray-50 pb-4">
+        <div>
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            Live Fare Estimate
+          </h3>
+          <p className="text-[10px] text-gray-400 mt-1">Calculating optimal routing...</p>
         </div>
-        <span className="text-[8px] text-gray-600 uppercase mt-1 text-right">
-          *Excludes dynamic toll estimation, weather surcharges, and breathing fees.
-        </span>
+        
+        {/* The fake timer */}
+        <div className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 text-right">
+          <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-0.5">Fare Locked</p>
+          <p className="text-sm font-mono font-bold text-gray-800">00:{urgencyCounter.toString().padStart(2, '0')}</p>
+        </div>
       </div>
 
+      {/* The Price Display */}
+      <div className="flex flex-col items-center justify-center my-8">
+        <span className="text-xs text-gray-400 line-through mb-1">
+          ₹{Math.floor(baseFare)} Standard
+        </span>
+        <div className="text-6xl font-black text-gray-900 tracking-tighter flex items-start">
+          <span className="text-2xl mt-2 text-gray-400 mr-1">₹</span>
+          {displayFare.toFixed(2)}
+        </div>
+      </div>
+
+      {/* Corporate Gaslighting Microcopy */}
+      <div className="bg-gray-50 rounded-xl p-3 mb-6">
+        <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
+          <span>Base rate</span>
+          <span>₹{Math.floor(baseFare)}.00</span>
+        </div>
+        <div className="flex justify-between items-center text-xs text-gray-600 mb-1">
+          <span>Dynamic weather surge</span>
+          <span className="text-blue-600 font-medium">+ ₹{(displayFare - baseFare - 5).toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between items-center text-[9px] text-gray-400 mt-3 pt-2 border-t border-gray-200">
+          <span>*Excludes regulatory algorithms and atmospheric fees.</span>
+        </div>
+      </div>
+
+      {/* The "Trap" Button */}
       <button 
-        className="w-full mt-6 bg-green-800 hover:bg-green-700 text-gray-300 font-bold py-4 rounded-none transition-colors"
-        onClick={() => alert("Payment Gateway Timeout. Fares recalculated.")}
+        className="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 rounded-xl transition-transform active:scale-95 flex justify-center items-center gap-2 shadow-lg"
+        onClick={() => alert("Fare expired due to high demand. Recalculating...")}
       >
-        Confirm Ride at ₹{displayFare.toFixed(2)}
+        <span>Confirm Ride</span>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
       </button>
     </div>
   );

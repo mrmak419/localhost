@@ -1,10 +1,10 @@
-# 🚖 Go Cab - Impetus Design Challenge
+#  Go Cab - Impetus Design Challenge
 
 Welcome to the **Go Cab** project repository! This project is being developed as part of the **Impetus** event.
 
 The core theme of this project is to design and build an interface for a cab booking platform where users can seamlessly book rides, track drivers, and manage their trip details.
 
-## 🎯 The Challenge
+##  The Challenge
 
 The event is structured around two contrasting design philosophies:
 
@@ -26,7 +26,7 @@ The goal is to resolve the chaos and deliver a flawless, user-centric design.
 * **Accessibility:** Easy access to driver and trip details.
 * **Smooth UX:** Intuitive navigation and an overall smooth user experience.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 Based on our current setup, the project utilizes a modern frontend stack:
 
@@ -35,7 +35,7 @@ Based on our current setup, the project utilizes a modern frontend stack:
 * **Tailwind CSS** (Utility-first CSS framework for rapid styling)
 * **State Management** (Custom store implementation)
 
-## 📁 Project Structure
+## Project Structure
 
 The codebase is organized for scalability and clean architecture:
 
@@ -51,11 +51,11 @@ src/
 
 ```
 
-## 🚧 Current Status: Work in Progress
+##  Current Status: Work in Progress
 
 **This project is currently under active development!** We are continuously building out the interfaces for both the "Chaos" and "Clarity" rounds. Expect frequent updates, new components, and UI/UX refinements in the coming days.
 
-## 🚀 Getting Started
+##  Getting Started
 
 To run this project locally, follow these steps:
 

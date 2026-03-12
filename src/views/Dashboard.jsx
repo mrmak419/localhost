@@ -11,9 +11,7 @@ export default function Dashboard() {
     <div className={`min-h-screen overflow-x-hidden transition-colors duration-500 font-sans ${isChaosMode ? 'bg-gray-50 text-gray-900' : 'bg-white text-gray-900'}`}>
       
       {/* Hidden Debugger / Toggle Status */}
-      <div className="fixed top-0 left-0 w-full p-1 text-[9px] font-mono bg-black text-gray-400 opacity-20 hover:opacity-100 pointer-events-none z-[9999] text-center tracking-widest transition-opacity hidden md:block">
-        SYSTEM MODE: {isChaosMode ? 'CHAOS_ACTIVE' : 'CLARITY_ACTIVE'} | PRESS CTRL+SHIFT+K TO TOGGLE
-      </div>
+      
 
       {isChaosMode ? (
         /* THE MOBILE DISTORTION TRAP */

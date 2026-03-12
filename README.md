@@ -1,6 +1,6 @@
 #  Go Cab - Impetus Design Challenge
 
-Welcome to the **Go Cab** project repository! This project is being developed as part of the **Impetus** event.
+Welcome to the **LocalHost** project repository! This project is being developed as part of the **Impetus** event.
 
 The core theme of this project is to design and build an interface for a cab booking platform where users can seamlessly book rides, track drivers, and manage their trip details.
 
@@ -35,62 +35,7 @@ Based on our current setup, the project utilizes a modern frontend stack:
 * **Tailwind CSS** (Utility-first CSS framework for rapid styling)
 * **State Management** (Custom store implementation)
 
-## Project Structure
 
-The codebase is organized for scalability and clean architecture:
-
-```text
-design impetus
-├── impetus
-│   ├── .gitignore
-│   ├── index.html
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── public
-│   │   └── vite.svg
-│   └── src
-│       ├── counter.js
-│       ├── javascript.svg
-│       ├── main.js
-│       └── style.css
-├── localhost
-│   ├── .gitignore
-│   ├── eslint.config.js
-│   ├── index.html
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── postcss.config.js
-│   ├── public
-│   │   └── vite.svg
-│   ├── README.md
-│   ├── src
-│   │   ├── App.css
-│   │   ├── App.jsx
-│   │   ├── assets
-│   │   │   └── react.svg
-│   │   ├── components
-│   │   │   ├── chaos
-│   │   │   │   ├── ConfusingCheckout.jsx
-│   │   │   │   ├── DriftingMapPin.jsx
-│   │   │   │   └── SurgePricingDisplay.jsx
-│   │   │   └── clarity
-│   │   │       ├── AccurateMap.jsx
-│   │   │       ├── CleanCheckout.jsx
-│   │   │       └── TransparentPricing.jsx
-│   │   ├── hooks
-│   │   │   ├── useDriftingLocation.js
-│   │   │   └── useFakeLag.js
-│   │   ├── index.css
-│   │   ├── main.jsx
-│   │   ├── store
-│   │   │   └── appStore.js
-│   │   └── views
-│   │       └── Dashboard.jsx
-│   ├── tailwind.config.js
-│   └── vite.config.js
-├── package-lock.json
-└── print-tree.js
-```
 
 
 
@@ -111,7 +56,7 @@ git clone https://github.com/mrmak419/localhost
 
 2. **Navigate to the project directory:**
 ```bash
-cd impetus
+cd cab-chaos
 
 ```
 

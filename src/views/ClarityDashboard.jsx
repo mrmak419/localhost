@@ -1,24 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../store/appStore';
+
 import ClarityLocation from '../components/clarity/ClarityLocation';
-// import ClarityMap from '../components/clarity/ClarityMap'; // Your teammate will build this
-import ClarityPricing from '../components/clarity/ClarityPricing';
+import AccurateMap from '../components/clarity/AccurateMap';
+import TransparentPricing from '../components/clarity/TransparentPricing';
+import CleanCheckout from '../components/clarity/CleanCheckout';
 
 export default function ClarityDashboard() {
-  const { isDarkMode, toggleDarkMode } = useAppStore();
-  const [activeTab, setActiveTab] = useState('book'); // 'book' or 'profile'
+  const { isDarkMode, toggleDarkMode, pickupLocation, dropoffLocation } = useAppStore();
+  const [activeTab, setActiveTab] = useState('book');
+  const [showMap, setShowMap] = useState(false);
+
+  // Show map if locations exist, or if the "show-map" event is fired from ClarityLocation
+  useEffect(() => {
+    if (pickupLocation || dropoffLocation) setShowMap(true);
+  }, [pickupLocation, dropoffLocation]);
+
+  useEffect(() => {
+    const handleShowMap = () => setShowMap(true);
+    window.addEventListener('show-map', handleShowMap);
+    return () => window.removeEventListener('show-map', handleShowMap);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 flex flex-col font-sans">
       
-      {/* Production Header */}
       <header className="px-6 py-4 bg-white dark:bg-gray-900 shadow-sm border-b border-gray-100 dark:border-gray-800 flex justify-between items-center z-10 sticky top-0">
         <h1 className="text-2xl font-black tracking-tighter">
           Local<span className="text-blue-600 dark:text-blue-400">host</span>
         </h1>
         
         <div className="flex items-center gap-4">
-          {/* Dark Mode Toggle */}
           <button 
             onClick={toggleDarkMode}
             className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -30,7 +42,6 @@ export default function ClarityDashboard() {
             )}
           </button>
           
-          {/* Profile Avatar Button */}
           <button 
             onClick={() => setActiveTab(activeTab === 'profile' ? 'book' : 'profile')}
             className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900 border-2 border-white dark:border-gray-800 overflow-hidden shadow-sm"
@@ -42,10 +53,8 @@ export default function ClarityDashboard() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto pb-20 p-4 max-w-lg mx-auto w-full">
         {activeTab === 'profile' ? (
-          /* Clean, Transparent Profile UI */
           <div className="animate-fade-in space-y-6 pt-4">
             <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4">
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
@@ -72,20 +81,25 @@ export default function ClarityDashboard() {
             <button className="w-full py-4 text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/20 rounded-2xl">Log Out</button>
           </div>
         ) : (
-          /* The Core Booking Pipeline */
-          <div className="animate-fade-in space-y-4 pt-2">
-            <ClarityLocation />
+          <div className="animate-fade-in space-y-4 pt-2 relative">
+            <div className="relative z-50">
+              <ClarityLocation />
+            </div>
             
-            {/* TEAMMATE'S MAP GOES HERE. 
-              It should read 'pickupLocation' and 'dropoffLocation' from Zustand, 
-              and write 'distance' to Zustand via setDistance(km).
-            */}
-            {/* <ClarityMap /> */}
-            <div className="w-full h-64 bg-gray-200 dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 font-mono text-sm">
-              [ Teammate's Map Component ]
+            {/* The Map is now hidden until showMap is true */}
+            {showMap && (
+              <div className="w-full rounded-3xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800 relative z-0 animate-fade-in">
+                <AccurateMap />
+              </div>
+            )}
+
+            <div className="relative z-40">
+              <TransparentPricing />
             </div>
 
-            <ClarityPricing />
+            <div className="relative z-40">
+              <CleanCheckout />
+            </div>
           </div>
         )}
       </main>

@@ -136,10 +136,19 @@ export default function ClarityLocation() {
       const mockLat = 12.9749;
       const mockLng = 77.5896;
       const cleanAddress = "UVCE Campus, K.R. Circle";
+      const payload = { address: cleanAddress, coords: [mockLat, mockLng] };
       
       window.__tempMapTitle = cleanAddress; 
-      if (targetField === 'pickup') setPickupText(cleanAddress);
-      else setDropoffText(cleanAddress);
+
+      // Push to global store instantly
+      if (targetField === 'pickup') {
+        setPickupText(cleanAddress);
+        setPickup(payload);
+        setTimeout(() => window.dispatchEvent(new Event('focus-dropoff')), 150);
+      } else {
+        setDropoffText(cleanAddress);
+        setDropoff(payload);
+      }
       
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('fly-to-suggestion', { detail: { coords: [mockLat, mockLng] } }));
@@ -177,25 +186,36 @@ export default function ClarityLocation() {
     setActiveField(null);
   };
 
-  // THE NEW SWAP FUNCTION
+  // ADDED: Clear field function
+  const handleClearField = (field, e) => {
+    e.preventDefault();
+    if (field === 'pickup') {
+      setPickupText('');
+      setPickup(null);
+      setActiveField('pickup');
+    } else {
+      setDropoffText('');
+      setDropoff(null);
+      setActiveField('dropoff');
+      if (dropoffInputRef.current) dropoffInputRef.current.focus();
+    }
+    setSuggestions([]);
+  };
+
   const handleSwapLocations = (e) => {
     e.preventDefault();
     
-    // Save current states temporarily
     const tempPickupText = pickupText;
     const tempDropoffText = dropoffText;
     const tempPickupLoc = pickupLocation;
     const tempDropoffLoc = dropoffLocation;
 
-    // Swap text boxes
     setPickupText(tempDropoffText);
     setDropoffText(tempPickupText);
 
-    // Swap global Zustand store
     if (tempDropoffLoc) setPickup(tempDropoffLoc); else setPickup(null);
     if (tempPickupLoc) setDropoff(tempPickupLoc); else setDropoff(null);
 
-    // If we have a valid dropoff coordinate after the swap, fly the map to it
     if (tempPickupLoc?.coords) {
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('fly-to-suggestion', { detail: { coords: tempPickupLoc.coords } }));
@@ -231,8 +251,16 @@ export default function ClarityLocation() {
               onFocus={() => { setActiveField('pickup'); handleInputChange('pickup', pickupText); }}
               onBlur={handleBlur}
               placeholder="Current Location"
-              className="w-full bg-transparent border-none px-4 py-3.5 text-[15px] font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+              className="w-full bg-transparent border-none pl-4 pr-12 py-3.5 text-[15px] font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none"
             />
+            {pickupText && (
+              <button 
+                onMouseDown={(e) => handleClearField('pickup', e)}
+                className="absolute right-12 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black dark:hover:text-white"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            )}
             <button 
               onClick={() => handleCurrentLocation('pickup')}
               className="p-2 mr-1 text-gray-400 hover:text-black dark:hover:text-white transition-colors shrink-0"
@@ -241,7 +269,6 @@ export default function ClarityLocation() {
               {isLocating ? (
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
               ) : (
-                /* NEW CORRECTED GPS BULLSEYE ICON */
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="7" strokeWidth="2" />
                   <circle cx="12" cy="12" r="3" fill="currentColor" />
@@ -259,11 +286,18 @@ export default function ClarityLocation() {
               onFocus={() => { setActiveField('dropoff'); handleInputChange('dropoff', dropoffText); }}
               onBlur={handleBlur}
               placeholder="Where to?"
-              className="w-full bg-transparent border-none px-4 py-3.5 text-[15px] font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+              className="w-full bg-transparent border-none pl-4 pr-10 py-3.5 text-[15px] font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none"
             />
+            {dropoffText && (
+              <button 
+                onMouseDown={(e) => handleClearField('dropoff', e)}
+                className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-black dark:hover:text-white"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            )}
           </div>
 
-          {/* THE NEW FLOATING SWAP BUTTON */}
           <button 
             onClick={handleSwapLocations}
             className="absolute -right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white dark:bg-gray-700 rounded-full shadow-md flex items-center justify-center border border-gray-100 dark:border-gray-600 hover:scale-105 transition-transform z-20 text-gray-500 dark:text-gray-300"

@@ -3,19 +3,54 @@ import { useAppStore } from '../../store/appStore';
 import { useFakeLag } from '../../hooks/useFakeLag';
 
 export default function ChaosPricing() {
-  // Read globalSurge from the store
-  const { baseFare, selectedRideType, globalSurge } = useAppStore();
+  const { baseFare = 50, selectedRideType } = useAppStore();
   const applyLag = useFakeLag();
   
-  // The Exhaustion Funnel States
+  // 1. ISOLATED SURGE STATES
+  const [chaosSurge, setChaosSurge] = useState(0);
+  const [isSurging, setIsSurging] = useState(false); // Controls the runaway timer
+  
   const [clickStage, setClickStage] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [injectLayoutShift, setInjectLayoutShift] = useState(false);
 
-  // The Endgame State Machine
   const [bookingPhase, setBookingPhase] = useState('pricing');
   const [cancelReason, setCancelReason] = useState('');
   const [absurdEta, setAbsurdEta] = useState('');
+
+  // 2. SECRET PRESENTER HOTKEY: Ctrl + Shift + S
+  useEffect(() => {
+    const handleSurgeHotkey = (e) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        // Toggle the runaway surge state
+        setIsSurging(prev => {
+          if (!prev) {
+            setInjectLayoutShift(true); // Pop the warning instantly
+            // Give it an initial bump so the jump is obvious immediately
+            setChaosSurge(Math.floor(Math.random() * 200) + 150); 
+            return true;
+          }
+          return false;
+        });
+        setClickStage(0); 
+      }
+    };
+    window.addEventListener('keydown', handleSurgeHotkey);
+    return () => window.removeEventListener('keydown', handleSurgeHotkey);
+  }, []);
+
+  // 3. THE RUNAWAY SURGE INTERVAL
+  useEffect(() => {
+    if (!isSurging || bookingPhase !== 'pricing') return;
+
+    // Every 800ms, add a random amount between ₹15 and ₹75 to the price
+    const surgeInterval = setInterval(() => {
+      setChaosSurge(prev => prev + Math.floor(Math.random() * 60) + 15);
+    }, 800);
+
+    return () => clearInterval(surgeInterval);
+  }, [isSurging, bookingPhase]);
 
   const cancellationReasons = [
     "Driver did not like your destination.",
@@ -39,27 +74,23 @@ export default function ChaosPricing() {
     return amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // Layout Shift Logic (Surge interval removed to use global store instead)
-  useEffect(() => {
-    if (bookingPhase !== 'pricing') return;
-    const shiftTimer = setTimeout(() => {
-      setInjectLayoutShift(true);
-    }, 2500);
-    return () => clearTimeout(shiftTimer);
-  }, [bookingPhase]);
-
-  // The Funnel Logic
   const handleDeceptiveClick = () => {
     if (isProcessing) return;
     setIsProcessing(true);
+    
+    // Stop the price from climbing once they try to click
+    setIsSurging(false); 
 
     applyLag(() => {
       setIsProcessing(false);
       
       if (clickStage === 0) {
         setClickStage(1);
+        // Start it back up if they don't immediately confirm the new terms!
+        setTimeout(() => setIsSurging(true), 1500); 
       } else if (clickStage === 1) {
         setClickStage(2);
+        setIsSurging(false); // Stop it for good
       } else {
         startEndgameSequence();
       }
@@ -82,6 +113,8 @@ export default function ChaosPricing() {
     setBookingPhase('pricing');
     setClickStage(0);
     setInjectLayoutShift(false);
+    setChaosSurge(0); 
+    setIsSurging(false);
   };
 
   if (!selectedRideType) return null;
@@ -158,10 +191,8 @@ export default function ChaosPricing() {
 
   // DEFAULT: The Pricing Phase
   
-  // Calculate perfectly synced dynamic pricing
   const multiplier = selectedRideType === 'suv' ? 2 : selectedRideType === 'sedan' ? 1.5 : 1;
-  const displayFare = (baseFare * multiplier) + (globalSurge || 0);
-  const surcharge = displayFare - baseFare;
+  const displayFare = (baseFare * multiplier) + chaosSurge;
 
   return (
     <div className="w-full max-w-md mx-auto mt-4 bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden transition-all duration-300">
@@ -169,15 +200,15 @@ export default function ChaosPricing() {
       <div className="flex justify-between items-start mb-6 border-b border-gray-50 pb-4">
         <div>
           <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <span className={`w-2 h-2 rounded-full ${isSurging ? 'bg-red-500 animate-ping' : 'bg-blue-500 animate-pulse'}`}></span>
             Live Fare Estimate
           </h3>
         </div>
       </div>
 
       <div className="flex flex-col items-center justify-center my-4">
-        <div className="text-5xl font-black text-gray-900 tracking-tighter flex items-start transition-all">
-          <span className="text-2xl mt-1 text-gray-400 mr-1">₹</span>
+        <div className={`text-5xl font-black tracking-tighter flex items-start transition-colors duration-200 ${isSurging ? 'text-red-600' : 'text-gray-900'}`}>
+          <span className={`text-2xl mt-1 mr-1 ${isSurging ? 'text-red-400' : 'text-gray-400'}`}>₹</span>
           {formatINR(displayFare)}
         </div>
       </div>
@@ -185,19 +216,21 @@ export default function ChaosPricing() {
       <div className="bg-gray-50 rounded-xl p-3 mb-6 border border-gray-100">
         <div className="flex justify-between items-center text-xs text-gray-600 mb-1.5">
           <span>Base rate (Distance mapped)</span>
-          <span className="font-mono">₹{formatINR(baseFare)}</span>
+          <span className="font-mono">₹{formatINR(baseFare * multiplier)}</span>
         </div>
         <div className="flex justify-between items-center text-xs text-gray-600">
           <span>Dynamic area surcharge</span>
-          <span className="text-blue-600 font-medium font-mono">+ ₹{formatINR(surcharge > 0 ? surcharge : 0)}</span>
+          <span className={`font-medium font-mono transition-colors duration-200 ${chaosSurge > 0 ? 'text-red-600 font-bold' : 'text-blue-600'}`}>
+            + ₹{formatINR(chaosSurge)}
+          </span>
         </div>
       </div>
 
       {injectLayoutShift && (
         <div className="bg-orange-50 rounded-xl p-3 mb-4 border border-orange-100 animate-fade-in">
-          <p className="text-xs font-bold text-orange-800 mb-1">High Demand Surcharge Added</p>
+          <p className="text-xs font-bold text-orange-800 mb-1">High Demand Surcharge Active</p>
           <p className="text-[10px] text-orange-600 leading-relaxed">
-            A temporary spatial multiplier has been applied to ensure intercontinental pickup reliability.
+            Fares are updating in real-time based on local driver availability. Lock in your rate immediately.
           </p>
         </div>
       )}
@@ -218,7 +251,7 @@ export default function ChaosPricing() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
         ) : clickStage === 0 ? (
-          <span>Confirm Ride</span>
+          <span>{isSurging ? 'Lock In Price' : 'Confirm Ride'}</span>
         ) : clickStage === 1 ? (
           <span>Acknowledge Surge & Proceed</span>
         ) : (

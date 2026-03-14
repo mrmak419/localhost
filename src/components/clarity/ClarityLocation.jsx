@@ -155,8 +155,7 @@ export default function ClarityLocation() {
     if (activeField === 'pickup') {
       setPickupText(suggestion.title);
       setPickup({ address: suggestion.title, coords: suggestion.coords });
-      // Only auto-focus dropoff if it's currently empty
-      if (!dropoffLocation) setTimeout(() => window.dispatchEvent(new Event('focus-dropoff')), 150);
+      setTimeout(() => window.dispatchEvent(new Event('focus-dropoff')), 150);
     } else {
       setDropoffText(suggestion.title);
       setDropoff({ address: suggestion.title, coords: suggestion.coords });
@@ -176,6 +175,32 @@ export default function ClarityLocation() {
     else { setDropoffText('Selecting on map...'); setDropoff(null); }
     setSuggestions([]);
     setActiveField(null);
+  };
+
+  // THE NEW SWAP FUNCTION
+  const handleSwapLocations = (e) => {
+    e.preventDefault();
+    
+    // Save current states temporarily
+    const tempPickupText = pickupText;
+    const tempDropoffText = dropoffText;
+    const tempPickupLoc = pickupLocation;
+    const tempDropoffLoc = dropoffLocation;
+
+    // Swap text boxes
+    setPickupText(tempDropoffText);
+    setDropoffText(tempPickupText);
+
+    // Swap global Zustand store
+    if (tempDropoffLoc) setPickup(tempDropoffLoc); else setPickup(null);
+    if (tempPickupLoc) setDropoff(tempPickupLoc); else setDropoff(null);
+
+    // If we have a valid dropoff coordinate after the swap, fly the map to it
+    if (tempPickupLoc?.coords) {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('fly-to-suggestion', { detail: { coords: tempPickupLoc.coords } }));
+      }, 100);
+    }
   };
 
   const handleBlur = () => setTimeout(() => setActiveField(null), 150);
@@ -198,7 +223,7 @@ export default function ClarityLocation() {
 
         <div className="space-y-3 ml-12 relative">
           
-          <div className="relative flex items-center bg-gray-100/70 dark:bg-gray-800/50 rounded-2xl transition-colors focus-within:bg-gray-100 dark:focus-within:bg-gray-800">
+          <div className="relative flex items-center bg-gray-100/70 dark:bg-gray-800/50 rounded-2xl transition-colors focus-within:bg-gray-100 dark:focus-within:bg-gray-800 pr-2">
             <input 
               type="text"
               value={pickupText}
@@ -210,17 +235,22 @@ export default function ClarityLocation() {
             />
             <button 
               onClick={() => handleCurrentLocation('pickup')}
-              className="p-3 mr-1 text-gray-400 hover:text-black dark:hover:text-white transition-colors shrink-0"
+              className="p-2 mr-1 text-gray-400 hover:text-black dark:hover:text-white transition-colors shrink-0"
+              title="Locate me"
             >
               {isLocating ? (
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path></svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                /* NEW CORRECTED GPS BULLSEYE ICON */
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="7" strokeWidth="2" />
+                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
               )}
             </button>
           </div>
 
-          <div className="relative bg-gray-100/70 dark:bg-gray-800/50 rounded-2xl transition-colors focus-within:bg-gray-100 dark:focus-within:bg-gray-800">
+          <div className="relative bg-gray-100/70 dark:bg-gray-800/50 rounded-2xl transition-colors focus-within:bg-gray-100 dark:focus-within:bg-gray-800 pr-10">
             <input 
               ref={dropoffInputRef}
               type="text"
@@ -228,11 +258,21 @@ export default function ClarityLocation() {
               onChange={(e) => handleInputChange('dropoff', e.target.value)}
               onFocus={() => { setActiveField('dropoff'); handleInputChange('dropoff', dropoffText); }}
               onBlur={handleBlur}
-              /* REMOVED DISABLED LOCK HERE */
               placeholder="Where to?"
               className="w-full bg-transparent border-none px-4 py-3.5 text-[15px] font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none"
             />
           </div>
+
+          {/* THE NEW FLOATING SWAP BUTTON */}
+          <button 
+            onClick={handleSwapLocations}
+            className="absolute -right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white dark:bg-gray-700 rounded-full shadow-md flex items-center justify-center border border-gray-100 dark:border-gray-600 hover:scale-105 transition-transform z-20 text-gray-500 dark:text-gray-300"
+            title="Swap locations"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          </button>
 
         </div>
       </div>
@@ -272,7 +312,6 @@ export default function ClarityLocation() {
                   className="w-full flex items-center gap-4 p-2.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-2xl transition-colors text-left"
                 >
                   <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                    {/* UNIFORM LOCATION MAP PIN ICON */}
                     <svg className="w-5 h-5 text-gray-400 dark:text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                   </div>
                   <div className={`border-b border-gray-100 dark:border-gray-800/50 pb-3 flex-1 pt-1 ${idx === listItems.length - 1 ? 'border-transparent' : ''}`}>
